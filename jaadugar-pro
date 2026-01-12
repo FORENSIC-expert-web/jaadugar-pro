@@ -1,0 +1,39 @@
+import streamlit as st
+import yfinance as yf
+import pandas as pd
+import ccxt
+
+st.set_page_config(layout="wide")
+st.title("🚀 Jaadugar Pro - All Markets Predictor")
+
+tab1, tab2, tab3 = st.tabs(["📈 Signals", "📊 Indicators", "📰 News"])
+
+with tab1:
+    col1, col2 = st.columns(2)
+    with col1:
+        symbol = st.text_input("Symbol", "RELIANCE.NS")
+    with col2:
+        mtype = st.selectbox("Market", ["NSE", "Crypto", "US"])
+    
+    if st.button("🔥 Get Signals"):
+        if mtype == "Crypto":
+            exch = ccxt.binance()
+            ticker = exch.fetch_ticker(symbol)
+            st.metric("Live Price", f"${ticker['last']:.2f}")
+        else:
+            data = yf.download(symbol, period="1mo", interval="1h")
+            rsi = get_rsi(data)
+            signal = "🚀 BUY" if rsi < 30 else "📉 SELL" if rsi > 70 else "➡️ HOLD"
+            st.header(signal)
+
+with tab2:
+    st.subheader("Technical Indicators")
+    # RSI, MACD, Bollinger Bands table yahan
+    st.dataframe(pd.DataFrame({"RSI": [45], "MACD": ["Bull"], "Signal": ["BUY"]}))
+
+def get_rsi(data, periods=14):
+    delta = data['Close'].diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=periods).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=periods).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs)).iloc[-1]
